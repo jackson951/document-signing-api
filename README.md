@@ -158,7 +158,7 @@ All endpoints are fully documented in Swagger UI.
 
 ## Contact
 
-* Author: **jACKSON KHUTO**
-* GitHub: [https://github.com/yourusername](https://github.com/jackson951)
-* Email: [your.email@example.com](mailto:jacksonkhuto591@gmail.com)
+* Author: **JACKSON KHUTO**
+* GitHub: [https://github.com/jackson951](https://github.com/jackson951)
+* Email: [jacksonkhuto591@gmail.com](mailto:jacksonkhuto591@gmail.com)
 
