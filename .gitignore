@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Build/Distribution
+dist/
+build/
+coverage/
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Testing
+coverage/
+.nyc_output/
+
+# Production files
+.deploy/
+.serverless/
+
+# Misc
+*.bak
+*.cache
+.cache/
+.debug/
+*.pid
+*.seed
+*.pid.lock
+
+# Custom backup files
+*~
+*.backup

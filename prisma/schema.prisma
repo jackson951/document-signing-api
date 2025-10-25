@@ -1,0 +1,291 @@
+// ============================================
+// Prisma Schema for Document Signing API
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+// ----------------------
+// ORGANIZATION & USERS
+// ----------------------
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  domain      String?   @unique
+  rateLimit Int?     @default(100)
+  users       User[]
+  apiKeys     ApiKey[]
+  oauthClients OAuthClient[]
+  documents   Document[]
+  templates   Template[]
+  webhooks    Webhook[]
+  subscriptions Subscription[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  role          Role         @default(DEVELOPER)
+  organization  Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  apiKeys       ApiKey[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  DEVELOPER
+  SIGNER
+}
+
+// ----------------------
+// AUTHENTICATION
+// ----------------------
+
+model ApiKey {
+  id             String       @id @default(uuid())
+  key            String       @unique
+  description    String?
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  user           User?        @relation(fields: [userId], references: [id])
+  userId         String?
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime?
+}
+
+model OAuthClient {
+  id             String       @id @default(uuid())
+  clientId       String       @unique
+  clientSecret   String
+  name           String
+   redirectUris   String    // ← ADD THIS LINE
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  createdAt      DateTime @default(now())
+}
+
+// ----------------------
+// DOCUMENT MANAGEMENT
+// ----------------------
+
+model Document {
+  id             String            @id @default(uuid())
+  title          String
+  fileUrl        String
+  status         DocumentStatus     @default(DRAFT)
+  organization   Organization       @relation(fields: [organizationId], references: [id])
+  organizationId String
+  versions       DocumentVersion[]
+  signingRequests SigningRequest[]
+  auditLogs      AuditLog[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+enum DocumentStatus {
+  DRAFT
+  REVOKED
+  SENT
+  SIGNING
+  COMPLETED
+  EXPIRED
+  DECLINED
+  CANCELLED
+}
+
+model DocumentVersion {
+  id          String    @id @default(uuid())
+  version     Int
+  fileUrl     String
+  document    Document  @relation(fields: [documentId], references: [id])
+  documentId  String
+  createdAt   DateTime  @default(now())
+}
+
+// ----------------------
+// TEMPLATES
+// ----------------------
+
+model Template {
+  id             String       @id @default(uuid())
+  name           String
+  fileUrl        String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ----------------------
+// SIGNING WORKFLOW
+// ----------------------
+
+model SigningRequest {
+  id             String       @id @default(uuid())
+  document       Document     @relation(fields: [documentId], references: [id])
+  documentId     String
+  status         SigningStatus @default(PENDING)
+  signers        Signer[]
+  expiresAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+enum SigningStatus {
+  DRAFT           
+  PENDING
+  SENT           
+  DELIVERED       
+  VIEWED          
+  IN_PROGRESS     
+  COMPLETED       
+  DECLINED       
+  CANCELLED      
+  EXPIRED         
+  REVOKED        
+  FAILED        
+  ARCHIVED        
+  DELETED        
+}
+
+
+model Signer {
+  id              String          @id @default(uuid())
+  name            String
+  email           String
+  status          SignerStatus    @default(PENDING)
+  signingRequest  SigningRequest  @relation(fields: [signingRequestId], references: [id])
+  signingRequestId String
+  signature       Signature?
+  signatureFields SignatureField[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum SignerStatus {
+  PENDING
+  SIGNED
+  DECLINED
+}
+
+model SignatureField {
+  id          String   @id @default(uuid())
+  pageNumber  Int
+  x           Float
+  y           Float
+  width       Float
+  height      Float
+  type        String   @default("SIGNATURE") // ← Removed enum, use string
+  signer      Signer   @relation(fields: [signerId], references: [id])
+  signerId    String
+}
+
+enum SignatureType {
+  CLICK
+  DRAW
+  TYPE
+  IMAGE
+  INITIAL
+  DATE
+  SIGNATURE
+}
+
+model Signature {
+  id             String     @id @default(uuid())
+  signer         Signer     @relation(fields: [signerId], references: [id])
+  signerId       String     @unique
+  fileUrl        String
+  signedAt       DateTime   @default(now())
+  ipAddress      String?
+  geoLocation    String?
+  certificateUrl String?
+}
+
+// ----------------------
+// AUDIT LOGGING
+// ----------------------
+
+model AuditLog {
+  id          String     @id @default(uuid())
+  document    Document   @relation(fields: [documentId], references: [id])
+  documentId  String
+  action      String
+  performedBy String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+}
+
+// ----------------------
+// NOTIFICATIONS
+// ----------------------
+
+model Webhook {
+  id             String       @id @default(uuid())
+  url            String
+  eventTypes     String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  events         WebhookEvent[]
+  createdAt      DateTime @default(now())
+}
+
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  webhook     Webhook  @relation(fields: [webhookId], references: [id])
+  webhookId   String
+  eventType   String
+  status      WebhookStatus @default(PENDING)
+  attempts    Int      @default(0)
+  createdAt   DateTime @default(now())
+  lastTriedAt DateTime?
+}
+
+enum WebhookStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+// ----------------------
+// BILLING & USAGE
+// ----------------------
+
+model Subscription {
+  id             String       @id @default(uuid())
+  planName       String
+  tier           String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  usageRecords   Usage[]
+  startedAt      DateTime @default(now())
+  endsAt         DateTime?
+}
+
+model Usage {
+  id             String        @id @default(uuid())
+  subscription   Subscription  @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String
+  apiCalls       Int           @default(0)
+  documentsSent  Int           @default(0)
+  periodStart    DateTime
+  periodEnd      DateTime
+}
