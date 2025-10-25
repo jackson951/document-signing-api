@@ -162,8 +162,3 @@ All endpoints are fully documented in Swagger UI.
 * GitHub: [https://github.com/yourusername](https://github.com/jackson951)
 * Email: [your.email@example.com](mailto:jacksonkhuto591@gmail.com)
 
-```
-
-
-Do you want me to make that version too?
-```
